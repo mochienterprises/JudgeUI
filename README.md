@@ -122,7 +122,8 @@ Topic: religion does more harm than good
 Generating arguments...
 Evaluating...
 
-Results saved to results/religion_debate_results.md
+Results saved to results/debate_12341222_134212.md (date and time stuff),
+(I personally just rename the file to what I prompted.)
 ```
 
 ---
