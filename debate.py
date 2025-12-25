@@ -23,6 +23,7 @@ if os.getenv("OPENAI_API_KEY"):
 MAX_ARGUMENT_LENGTH = 5000
 ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929"
 OPENAI_MODEL = "gpt-4o"
+AUTO_WIN_THRESHOLD = 5  # Score difference threshold for automatic wins
 
 # Global provider selection
 selected_provider = None
@@ -250,6 +251,209 @@ def check_bias(results):
     return avg_diff
 
 
+def determine_winner(results, topic):
+    """
+    Determine the winner between best FOR and AGAINST arguments.
+
+    Args:
+        results: List of result dictionaries with stance, quality, argument, evaluation
+        topic: The debate topic string
+
+    Returns:
+        Dictionary with winner information
+    """
+    # Extract best arguments from each stance
+    for_args = [r for r in results if r['stance'] == 'FOR']
+    against_args = [r for r in results if r['stance'] == 'AGAINST']
+
+    best_for = max(for_args, key=lambda x: x['evaluation']['score'])
+    best_against = max(against_args, key=lambda x: x['evaluation']['score'])
+
+    for_score = best_for['evaluation']['score']
+    against_score = best_against['evaluation']['score']
+    score_diff = abs(for_score - against_score)
+
+    # Determine winner
+    if score_diff > AUTO_WIN_THRESHOLD:
+        # Automatic win - score difference is decisive
+        winner = 'FOR' if for_score > against_score else 'AGAINST'
+        reasoning = f"Clear victory based on evaluation scores. The {winner} argument scored {max(for_score, against_score)} points compared to {min(for_score, against_score)} points for the opposing side, a difference of {score_diff} points."
+
+        return {
+            'method': 'automatic',
+            'winner': winner,
+            'for_score': for_score,
+            'against_score': against_score,
+            'score_difference': score_diff,
+            'reasoning': reasoning,
+            'for_argument': best_for['argument'],
+            'against_argument': best_against['argument'],
+            'for_quality': best_for['quality'],
+            'against_quality': best_against['quality']
+        }
+    else:
+        # Scores within threshold - call LLM for head-to-head comparison
+        print(f"  Scores within {AUTO_WIN_THRESHOLD} points ({for_score} vs {against_score})")
+        print("  Conducting head-to-head evaluation...")
+
+        llm_result = evaluate_winner(
+            topic,
+            best_for['argument'],
+            for_score,
+            best_against['argument'],
+            against_score
+        )
+
+        # Merge LLM result with base information
+        return {
+            'method': 'head-to-head',
+            'for_score': for_score,
+            'against_score': against_score,
+            'score_difference': score_diff,
+            'for_argument': best_for['argument'],
+            'against_argument': best_against['argument'],
+            'for_quality': best_for['quality'],
+            'against_quality': best_against['quality'],
+            **llm_result  # Adds winner, margin, reasoning, for_strengths, against_strengths, deciding_factor
+        }
+
+
+def evaluate_winner(topic, for_arg, for_score, against_arg, against_score):
+    """
+    Perform head-to-head LLM evaluation when scores are within threshold.
+
+    Args:
+        topic: Debate topic string
+        for_arg: Best FOR argument text
+        for_score: Blind evaluation score for FOR argument
+        against_arg: Best AGAINST argument text
+        against_score: Blind evaluation score for AGAINST argument
+
+    Returns:
+        Dictionary with winner, margin, reasoning, strengths, and deciding_factor
+    """
+    prompt = f"""You are a debate judge. You must select a winner.
+
+TOPIC: "{topic}"
+
+ARGUMENT FOR:
+{for_arg}
+(Quality Score: {for_score})
+
+ARGUMENT AGAINST:
+{against_arg}
+(Quality Score: {against_score})
+
+Evaluate which argument better addresses the topic. Consider:
+1. Which argument more directly answers the question posed by the topic?
+2. Which would be more convincing to a neutral, intelligent audience?
+3. Which makes the stronger overall case for their position?
+
+You MUST choose a winner. No ties allowed.
+
+Respond in JSON:
+{{
+  "winner": "FOR" or "AGAINST",
+  "margin": "narrow" or "moderate" or "decisive",
+  "reasoning": "<2-3 sentences explaining why this argument wins>",
+  "for_strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
+  "against_strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
+  "deciding_factor": "<what tipped the scales>"
+}}
+
+Margin definitions:
+- "narrow": Very close, could go either way
+- "moderate": Clear advantage but opponent had merit
+- "decisive": Overwhelming superiority
+
+Respond with ONLY valid JSON, no other text."""
+
+    result_text = call_llm(prompt, max_tokens=1500)
+
+    # Clean up JSON if wrapped in markdown code blocks
+    if result_text.startswith("```"):
+        lines = result_text.split("\n")
+        result_text = "\n".join(lines[1:-1]) if len(lines) > 2 else result_text
+        if result_text.startswith("json"):
+            result_text = result_text[4:].strip()
+
+    try:
+        evaluation = json.loads(result_text)
+
+        # Validate required fields
+        required_fields = ['winner', 'margin', 'reasoning', 'for_strengths', 'against_strengths', 'deciding_factor']
+        if not all(field in evaluation for field in required_fields):
+            raise ValueError("Missing required fields in JSON response")
+
+        # Validate winner value
+        if evaluation['winner'] not in ['FOR', 'AGAINST']:
+            raise ValueError(f"Invalid winner value: {evaluation['winner']}")
+
+        # Validate margin value
+        if evaluation['margin'] not in ['narrow', 'moderate', 'decisive']:
+            raise ValueError(f"Invalid margin value: {evaluation['margin']}")
+
+        return evaluation
+
+    except (json.JSONDecodeError, ValueError) as e:
+        # Fallback if JSON parsing or validation fails
+        print(f"  Warning: Error parsing winner evaluation ({e}), using fallback")
+
+        # Determine winner based on scores as fallback
+        winner = 'FOR' if for_score >= against_score else 'AGAINST'
+
+        return {
+            'winner': winner,
+            'margin': 'narrow',
+            'reasoning': f"Based on blind evaluation scores. FOR: {for_score}, AGAINST: {against_score}.",
+            'for_strengths': ["Unable to determine (evaluation error)"],
+            'against_strengths': ["Unable to determine (evaluation error)"],
+            'deciding_factor': "Score-based fallback due to evaluation error"
+        }
+
+
+def display_winner(winner_result):
+    """
+    Display winner determination in terminal.
+
+    Args:
+        winner_result: Dictionary from determine_winner()
+    """
+    print("\n" + "="*80)
+    print("WINNER DETERMINATION")
+    print("="*80)
+
+    print(f"\nMethod: {winner_result['method'].upper()}")
+    print(f"\nBest FOR argument: {winner_result['for_quality']} quality (Score: {winner_result['for_score']})")
+    print(f"Best AGAINST argument: {winner_result['against_quality']} quality (Score: {winner_result['against_score']})")
+    print(f"Score difference: {winner_result['score_difference']} points")
+
+    print(f"\n{'='*80}")
+    print(f"WINNER: {winner_result['winner']}")
+
+    if winner_result['method'] == 'head-to-head':
+        print(f"Margin: {winner_result['margin'].upper()}")
+
+    print(f"{'='*80}")
+
+    print(f"\nReasoning:")
+    print(f"  {winner_result['reasoning']}")
+
+    if winner_result['method'] == 'head-to-head':
+        print(f"\nFOR Argument Strengths:")
+        for strength in winner_result['for_strengths']:
+            print(f"  - {strength}")
+
+        print(f"\nAGAINST Argument Strengths:")
+        for strength in winner_result['against_strengths']:
+            print(f"  - {strength}")
+
+        print(f"\nDeciding Factor:")
+        print(f"  {winner_result['deciding_factor']}")
+
+    print("="*80)
+
+
 def view_arguments(results):
     """Display all generated arguments."""
 
@@ -264,7 +468,7 @@ def view_arguments(results):
         print("-"*100)
 
 
-def save_to_markdown(topic, results, ranking_correct, avg_bias, provider):
+def save_to_markdown(topic, results, ranking_correct, avg_bias, provider, winner_result):
     """Save results to a markdown file."""
 
     # Create results directory if it doesn't exist
@@ -304,6 +508,34 @@ def save_to_markdown(topic, results, ranking_correct, avg_bias, provider):
         md_content += f"### {r['stance']} - {r['quality'].upper()} Quality\n\n"
         md_content += f"{r['argument']}\n\n"
         md_content += "---\n\n"
+
+    # Add Winner Determination section
+    md_content += "## Winner Determination\n\n"
+
+    md_content += f"**Method:** {winner_result['method'].capitalize()}\n\n"
+    md_content += f"**Best FOR Argument:** {winner_result['for_quality']} quality (Score: {winner_result['for_score']})\n\n"
+    md_content += f"**Best AGAINST Argument:** {winner_result['against_quality']} quality (Score: {winner_result['against_score']})\n\n"
+    md_content += f"**Score Difference:** {winner_result['score_difference']} points\n\n"
+
+    md_content += f"### Winner: {winner_result['winner']}\n\n"
+
+    if winner_result['method'] == 'head-to-head':
+        md_content += f"**Margin:** {winner_result['margin'].capitalize()}\n\n"
+
+    md_content += f"**Reasoning:** {winner_result['reasoning']}\n\n"
+
+    if winner_result['method'] == 'head-to-head':
+        md_content += "#### FOR Argument Strengths\n\n"
+        for strength in winner_result['for_strengths']:
+            md_content += f"- {strength}\n"
+
+        md_content += "\n#### AGAINST Argument Strengths\n\n"
+        for strength in winner_result['against_strengths']:
+            md_content += f"- {strength}\n"
+
+        md_content += f"\n**Deciding Factor:** {winner_result['deciding_factor']}\n\n"
+
+    md_content += "---\n\n"
 
     # Write to file
     with open(filename, 'w', encoding='utf-8') as f:
@@ -405,6 +637,13 @@ def main():
     # Check bias
     avg_bias = check_bias(results)
 
+    # Determine winner
+    print("\nDetermining winner...")
+    winner_result = determine_winner(results, topic)
+
+    # Display winner
+    display_winner(winner_result)
+
     # Ask if user wants to view arguments
     print("\n" + "="*80)
     view = input("\nView generated arguments? (y/n): ").strip().lower()
@@ -414,7 +653,7 @@ def main():
     # Ask if user wants to save results
     save = input("\nSave results to markdown file? (y/n): ").strip().lower()
     if save == 'y':
-        save_to_markdown(topic, results, ranking_correct, avg_bias, selected_provider)
+        save_to_markdown(topic, results, ranking_correct, avg_bias, selected_provider, winner_result)
 
     print("\n" + "="*80)
     print("Done!")
