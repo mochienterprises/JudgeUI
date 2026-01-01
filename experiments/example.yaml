@@ -1,0 +1,40 @@
+# Example Experiment: Temperature and Prompt Comparison
+#
+# This experiment tests how temperature and evaluator prompts affect
+# scoring consistency and fault detection across two models.
+#
+# Prerequisites:
+#   1. Generate arguments first:
+#      python generate_arguments.py --topic gun-control --full-set
+#
+#   2. Then run this experiment:
+#      python run_experiment.py experiments/example.yaml
+
+name: "temp-prompt-comparison"
+description: "Compare temperature and prompt effects on fault detection"
+
+matrix:
+  # Models to test
+  models:
+    - claude-sonnet-4-5
+    - gpt-4o
+
+  # Temperature values to test
+  temperatures:
+    - 0.0    # Deterministic
+    - 0.5    # Balanced
+    - 1.0    # Default/creative
+
+  # Evaluator prompts to compare
+  evaluator_prompts:
+    - default
+    - strict
+    - lenient
+
+# Argument IDs to evaluate (fill in after generating arguments)
+# Leave empty to use all available arguments
+argument_ids: []
+
+# How many times to evaluate each combination
+# Higher = better consistency measurement, but more API calls
+runs_per_combination: 2

@@ -1,0 +1,49 @@
+You are an expert argument evaluator. Analyze the following argument for logical soundness, intellectual honesty, and structural coherence.
+
+IMPORTANT: You are evaluating this argument BLIND - you do not know what topic it is about or what stance it takes. Focus purely on the quality of reasoning and argumentation.
+
+Evaluate the argument and respond with a JSON object containing:
+- score: An integer from 0-100 representing overall argument quality
+- detected_faults: A list of specific faults found. ONLY flag these if they are clear and significant:
+
+  LOGICAL FALLACIES (errors in reasoning):
+  - strawman: Misrepresents opponent's position
+  - circular_reasoning: Conclusion used as premise
+  - false_dichotomy: Only two options presented when more exist
+  - false_cause: Correlation treated as causation
+  - hasty_generalization: Sweeping conclusion from limited evidence
+  - non_sequitur: Conclusion doesn't follow from premises
+  - slippery_slope: Unjustified chain to extreme consequences
+
+  INTELLECTUAL DISHONESTY (deceptive tactics):
+  - ad_hominem: Attacks person instead of argument
+  - red_herring: Distracts with irrelevant topics
+  - moving_goalposts: Changes criteria after evidence given
+  - cherry_picking: Ignores contradictory evidence
+  - gaslighting: Denies obvious facts
+
+  STRUCTURAL FAILURES:
+  - no_evidence: Factual claims without support
+  - contradictory_claims: Internally inconsistent
+  - unsupported_conclusion: Conclusion exceeds evidence
+  - poor_cohesion: Disjointed, no logical flow
+
+- reasoning: A brief explanation of your evaluation (2-3 sentences)
+
+NOTE: Do NOT penalize for:
+- Citing authorities/experts (this is valid)
+- Emotional language or appeals (this is normal in persuasion)
+- Anecdotes used as illustrations (not as sole proof)
+- Strong word choices (rhetorical skill, not a fault)
+
+SCORING GUIDELINES:
+- 90-100: Excellent - sound logic, honest argumentation, well-structured
+- 70-89: Good - minor flaws but fundamentally sound
+- 50-69: Adequate - some logical or structural issues
+- 30-49: Poor - significant fallacies or dishonest tactics
+- 0-29: Very poor - multiple serious faults, argument fails
+
+ARGUMENT TO EVALUATE:
+{argument}
+
+Respond with ONLY valid JSON, no other text.
