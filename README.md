@@ -1,185 +1,184 @@
-# JudgeUI v1 - Debate Argument Evaluator
+# JudgeUI - AI Judge Evaluation Framework
 
-A terminal-based tool for testing AI judge algorithms on synthetic debate arguments.
+A comprehensive framework for scientifically testing AI judge algorithms across multiple models, system prompts, and evaluation criteria.
 
 ---
 
 ## Project Overview
 
-**Goal:** Validate that an AI can accurately judge argument quality regardless of stance or topic.
+**Goal:** Validate and compare AI judges' ability to accurately evaluate argument quality, detect logical fallacies, and maintain objectivity across different topics and stances.
 
-**Problem:** We're building a debate platform where AI judges user arguments. Before deploying, we need to confirm the AI can:
-- Distinguish low, medium, and high quality arguments
-- Score fairly without bias toward FOR or AGAINST positions
-- Detect logical fallacies reliably
-
-**Solution:** Generate controlled synthetic arguments at known quality levels, evaluate them blind, and verify the AI ranks them correctly.
+**Key Capabilities:**
+- Multi-provider LLM support (OpenAI, Anthropic, xAI/Grok, Google/Gemini)
+- Fault injection system for ground-truth argument quality testing
+- Political bias assessment using the Political Compass test
+- ChangeMyView corpus integration for real-world persuasion detection
+- Parallel experiment execution across models
+- Configurable system prompts and evaluation criteria
 
 ---
 
-## Current State
+## Features
 
-✅ **Working:**
-- Single-file CLI tool (`debate.py`)
-- Synthetic argument generation (low/medium/high × for/against)
-- Blind evaluation (AI judges without seeing the topic)
-- Results table with scores, fallacies, and reasoning
-- Ranking validation (checks Low < Medium < High)
-- Bias detection (average point difference between stances)
-- Full argument text included in results
-- Markdown export for team review
+### Multi-Provider Support
 
-✅ **Supported Models:**
-- Anthropic (Claude Sonnet 4.5)
-- OpenAI (GPT-4o)
+Test and compare across state-of-the-art models:
 
-📋 **Planned:**
-- Gemini support
-- Grok support
-- Single argument evaluation mode (paste your own argument)
----
+| Provider | Models |
+|----------|--------|
+| OpenAI | GPT-5.2, GPT-4o, o1 |
+| Anthropic | Claude 4 Opus, Claude Sonnet 4.5 |
+| xAI | Grok-3, Grok-2 |
+| Google | Gemini 2.5 Flash/Pro, Gemini 2.0 Flash |
 
-## Architecture
+### Fault Injection System
 
+Generate arguments with known flaws for precise evaluation testing:
+
+```yaml
+# Fault categories with severity scores
+logical:
+  strawman: -15
+  circular_reasoning: -15
+  false_dichotomy: -12
+  hasty_generalization: -10
+
+dishonesty:
+  ad_hominem: -15
+  cherry_picking: -12
+  gaslighting: -15
+
+structural:
+  no_evidence: -15
+  contradictory_claims: -15
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         INPUT                                │
-│                                                              │
-│   Select provider: Anthropic or OpenAI                      │
-│   Topic: "religion does more harm than good"                │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  ARGUMENT GENERATOR                          │
-│                                                              │
-│   Creates 6 synthetic arguments:                            │
-│                                                              │
-│   FOR (supports topic)      AGAINST (opposes topic)         │
-│   ├── Low quality           ├── Low quality                 │
-│   ├── Medium quality        ├── Medium quality              │
-│   └── High quality          └── High quality                │
-│                                                              │
-│   Quality Definitions:                                       │
-│   • Low: Fallacies, emotional, anecdotal, ad hominem        │
-│   • Medium: Some logic, weak evidence, minor gaps           │
-│   • High: Strong logic, cited sources, steelmans opponent   │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   BLIND EVALUATOR                            │
-│                                                              │
-│   Each argument evaluated WITHOUT topic context             │
-│   Returns: Score (0-100), Fallacies, Reasoning              │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      VALIDATION                              │
-│                                                              │
-│   • Ranking Check: Low < Medium < High for both stances?   │
-│   • Bias Check: Average point difference between stances    │
-└─────────────────────────────────────────────────────────────┘
+
+### Political Compass Testing
+
+Assess model political bias using the 62-question Political Compass test:
+
+```bash
+# Run baseline test
+python run_political_compass.py --models gpt-5.2 grok-3 gemini-2.0-flash
+
+# Test with bias-inducing system prompts
+python run_political_compass.py --bias all
+
+# Available bias prompts: center, auth_left, auth_right, lib_left, lib_right
+```
+
+**Sample Results:**
+| Model | Baseline | Auth Left | Auth Right | Lib Right | Lib Left |
+|-------|----------|-----------|------------|-----------|----------|
+| GPT-5.2 | E:-4.6 S:-6.2 | E:-7.8 S:+1.4 | E:+6.5 S:+6.0 | E:+6.5 S:-7.6 | E:-8.7 S:-8.5 |
+| Grok-3 | E:-3.5 S:-5.4 | E:-8.9 S:+2.2 | E:+8.0 S:+6.4 | E:+6.7 S:-7.0 | E:-8.5 S:-9.0 |
+
+### ChangeMyView Corpus Integration
+
+Test AI judges on real persuasive arguments from Reddit's r/ChangeMyView:
+
+```bash
+# Run CMV experiment
+python run_cmv_experiment.py --models gpt-5.2 grok-3 gemini-2.0-flash --pairs 20
+```
+
+Tests whether AI judges can distinguish arguments that actually changed someone's mind vs. those that didn't.
+
+### Experiment Runner
+
+Run systematic experiments across model × temperature × prompt combinations:
+
+```bash
+# Run experiment from config
+python run_experiment.py experiments/quick-test.yaml
+
+# Generate arguments with fault injection
+python generate_arguments.py --topic "Universal basic income" --faults strawman cherry_picking
 ```
 
 ---
 
 ## Quick Start
 
+### Installation
+
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/JudgeUI.git
+git clone https://github.com/mochienterprises/JudgeUI.git
 cd JudgeUI
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up your API keys
+# Set up API keys
 cp .env.example .env
-# Edit .env and add your keys
+# Edit .env with your API keys
+```
 
-# Run it
-python debate.py
+### Required API Keys
+
+```bash
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GROK_API_KEY=xai-...
+GEMINI_API_KEY=AIza...
+```
+
+### Run Your First Test
+
+```bash
+# Political compass test (quick)
+python run_political_compass.py --models gpt-5.2 grok-3
+
+# CMV persuasion detection
+python run_cmv_experiment.py --pairs 10
+
+# Full experiment with fault injection
+python run_experiment.py experiments/quick-test.yaml
 ```
 
 ---
 
-## Example Session
+## Architecture
 
 ```
-================================================================================
-DEBATE EVALUATION TOOL
-================================================================================
-Available AI providers:
-1. Anthropic (Claude Sonnet 4.5)
-2. OpenAI (GPT-4o)
-Select provider (1 or 2): 2
-Using OPENAI
-
-Topic: religion does more harm than good
-
-Generating arguments...
-Evaluating...
-
-Results saved to results/debate_12341222_134212.md (date and time stuff),
-(I personally just rename the file to what I prompted.)
-```
-
----
-
-## Example Output
-
-### Summary
-
-| Stance | Quality | Score | Fallacies |
-|--------|---------|-------|-----------|
-| FOR | low | 20 | hasty_generalization, straw_man, ad_hominem, false_dilemma, cherry_picking, slippery_slope, appeal_to_emotion |
-| FOR | medium | 60 | Hasty Generalization, Selective Attention |
-| FOR | high | 85 | None |
-| AGAINST | low | 30 | Appeal to Emotion, Straw Man, Hasty Generalization, No True Scotsman, Ad Hominem |
-| AGAINST | medium | 70 | None |
-| AGAINST | high | 85 | None |
-
-**Ranking Correct:** Yes  
-**Average Bias:** 6.7 points
-
-### Sample Generated Argument (FOR - Low Quality)
-
-> Religion is the root of all evil, and it undeniably does more harm than good. Anyone who supports religion clearly hasn't opened their eyes to the damage it has caused throughout history. It's obvious that religion is solely responsible for all wars and conflicts in the world...
-
-### Sample Generated Argument (FOR - High Quality)
-
-> The argument systematically addresses both the positive and negative impacts of religion, using evidence and examples to support the claim that religion can cause more harm than good. It effectively anticipates counterarguments and offers a balanced view by highlighting secular alternatives...
-
----
-
-## Output Format
-
-Results are saved as markdown files in the `results/` folder:
-
-```markdown
-# Debate Evaluation Results
-
-**Topic:** religion does more harm than good
-**Date:** 2025-12-22 05:35:22
-**Provider:** OPENAI
-**Model:** gpt-4o
-
-## Summary
-- **Ranking Correct:** Yes
-- **Average Bias:** 6.7 points
-
-## Detailed Results
-| Stance | Quality | Score | Fallacies | Reasoning |
-|--------|---------|-------|-----------|-----------|
-| FOR | low | 20 | ... | ... |
-...
-
-## Generated Arguments
-### FOR - LOW Quality
-[Full argument text]
-...
+┌─────────────────────────────────────────────────────────────┐
+│                    CONFIGURATION                            │
+│  config/models.yaml     - Model registry                    │
+│  config/faults.yaml     - Fault taxonomy & severities       │
+│  config/topics.yaml     - Curated debate topics             │
+│  config/prompts/        - System prompts for evaluation     │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   ARGUMENT GENERATION                        │
+│                                                              │
+│  • Topic selection from curated library                     │
+│  • Stance assignment (for/against)                          │
+│  • Fault injection with known severities                    │
+│  • Ground truth score calculation                           │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     EVALUATION                               │
+│                                                              │
+│  • Blind evaluation (no topic/stance revealed)              │
+│  • Multiple models in parallel                              │
+│  • Configurable system prompts                              │
+│  • Fault detection & scoring                                │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      ANALYSIS                                │
+│                                                              │
+│  • Score delta (predicted vs ground truth)                  │
+│  • Fault detection precision/recall                         │
+│  • Cross-model comparison                                   │
+│  • Bias measurement                                         │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -187,39 +186,159 @@ Results are saved as markdown files in the `results/` folder:
 ## File Structure
 
 ```
-JudgeUI_V1/
-├── debate.py           # Main script
-├── .env                # Your API keys (not tracked)
-├── .env.example        # Template for API keys
-├── requirements.txt    # Python dependencies
-├── README.md           # This file
-└── results/            # Generated reports (not tracked)
+JudgeUI/
+├── src/
+│   ├── providers/           # LLM provider abstraction
+│   │   ├── anthropic.py
+│   │   ├── openai.py
+│   │   ├── xai.py
+│   │   └── google.py
+│   ├── models.py            # Data models
+│   ├── generator.py         # Argument generation
+│   ├── evaluator.py         # Argument evaluation
+│   ├── experiment.py        # Experiment runner
+│   ├── convokit_loader.py   # CMV corpus loader
+│   └── analysis.py          # Results analysis
+├── config/
+│   ├── models.yaml          # Model registry
+│   ├── faults.yaml          # Fault taxonomy
+│   ├── topics.yaml          # Debate topics
+│   ├── political_compass.yaml  # 62 PC questions
+│   └── prompts/
+│       ├── evaluators/      # Judge system prompts
+│       └── political_bias/  # Bias manipulation prompts
+├── experiments/             # Experiment configurations
+├── results/                 # Output data (JSON)
+├── run_experiment.py        # Main experiment CLI
+├── run_political_compass.py # Political bias testing
+├── run_cmv_experiment.py    # CMV corpus testing
+├── generate_arguments.py    # Argument generation CLI
+└── analyze.py               # Results analysis CLI
+```
+
+---
+
+## CLI Reference
+
+### Political Compass Test
+
+```bash
+# Basic test
+python run_political_compass.py --models gpt-5.2 grok-3 gemini-2.0-flash
+
+# With bias prompts
+python run_political_compass.py --bias center auth_left auth_right lib_left lib_right
+
+# All available biases
+python run_political_compass.py --bias all
+
+# List available bias prompts
+python run_political_compass.py --list-biases
+```
+
+### CMV Experiment
+
+```bash
+# Run with default settings
+python run_cmv_experiment.py
+
+# Custom configuration
+python run_cmv_experiment.py \
+  --models gpt-5.2 grok-3 \
+  --pairs 50 \
+  --temperature 0.0 \
+  --prompt strict
+```
+
+### Experiment Runner
+
+```bash
+# Run from config file
+python run_experiment.py experiments/example.yaml
+
+# Quick test
+python run_experiment.py experiments/quick-test.yaml
+```
+
+### Argument Generation
+
+```bash
+# Generate with specific faults
+python generate_arguments.py \
+  --topic "Climate change requires immediate action" \
+  --stance for \
+  --faults strawman cherry_picking
+
+# Generate clean argument
+python generate_arguments.py \
+  --topic "Universal basic income" \
+  --stance against
 ```
 
 ---
 
 ## Configuration
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `ANTHROPIC_API_KEY` | Your Claude API key | For Anthropic |
-| `OPENAI_API_KEY` | Your OpenAI API key | For OpenAI |
+### Adding a New Model
 
-You need at least one API key.
+Edit `config/models.yaml`:
+
+```yaml
+my-new-model:
+  provider: openai  # or anthropic, xai, google
+  display_name: "My New Model"
+  model_id: "actual-api-model-id"
+  default_temperature: 1.0
+  max_tokens: 2000
+```
+
+### Creating a Custom Evaluator Prompt
+
+Add a file to `config/prompts/evaluators/`:
+
+```text
+# config/prompts/evaluators/my_prompt.txt
+You are an expert debate judge. Evaluate arguments based on...
+```
+
+### Defining New Faults
+
+Edit `config/faults.yaml`:
+
+```yaml
+faults:
+  my_category:
+    my_fault:
+      severity: -10
+      description: "What this fault means"
+      example: "Example of this fault"
+```
+
+---
+
+## Results
+
+Results are saved as JSON in the `results/` directory:
+
+- `results/political_compass/` - Political compass test results
+- `results/cmv/` - ChangeMyView experiment results
+- `results/experiments/` - General experiment results
 
 ---
 
 ## Roadmap
 
-- [x] Anthropic Claude support
-- [x] OpenAI GPT support
-- [x] Markdown export with full arguments
-- [x] Fallacy detection
-- [x] Bias measurement
-- [ ] Google Gemini support
-- [ ] xAI Grok support
-- [ ] Single argument evaluation mode
-- [ ] Configurable quality definitions
+- [x] Multi-provider LLM support (OpenAI, Anthropic, xAI, Google)
+- [x] Fault injection system with severity scores
+- [x] Political Compass bias testing
+- [x] Political bias manipulation via system prompts
+- [x] ConvoKit/ChangeMyView corpus integration
+- [x] Parallel experiment execution
+- [ ] Web UI for interactive testing
+- [ ] Additional corpora (persuasion-reddit, debate.org)
+- [ ] Custom fault definition via UI
+- [ ] A/B testing framework for prompt optimization
+
 ---
 
 ## License

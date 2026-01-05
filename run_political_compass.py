@@ -406,6 +406,123 @@ def print_summary(results: dict):
     print()
 
 
+def load_bias_prompt(bias_name: str, config_dir: Path = CONFIG_DIR) -> str:
+    """Load a political bias system prompt."""
+    prompt_path = config_dir / "prompts" / "political_bias" / f"{bias_name}.txt"
+    if not prompt_path.exists():
+        raise ValueError(f"Bias prompt not found: {prompt_path}")
+    return prompt_path.read_text()
+
+
+def list_bias_prompts(config_dir: Path = CONFIG_DIR) -> list[str]:
+    """List available bias prompts."""
+    prompt_dir = config_dir / "prompts" / "political_bias"
+    if not prompt_dir.exists():
+        return []
+    return [p.stem for p in prompt_dir.glob("*.txt")]
+
+
+def run_bias_experiment(
+    models: list[str],
+    bias_prompts: list[str],
+    compass_config: dict,
+    app_config,
+    temperature: float = 0.0,
+    config_dir: Path = CONFIG_DIR,
+) -> dict:
+    """
+    Run political compass test with multiple bias prompts.
+
+    Args:
+        models: List of model IDs
+        bias_prompts: List of bias prompt names (e.g., ["center", "auth_left"])
+        compass_config: Political compass config
+        app_config: App config
+        temperature: Temperature for models
+        config_dir: Config directory
+
+    Returns:
+        Dict with results for each model x bias combination
+    """
+    all_results = {}
+
+    for bias_name in bias_prompts:
+        print(f"\n{'='*60}")
+        print(f"BIAS PROMPT: {bias_name.upper()}")
+        print(f"{'='*60}")
+
+        try:
+            system_prompt = load_bias_prompt(bias_name, config_dir)
+        except ValueError as e:
+            print(f"  Error: {e}")
+            continue
+
+        results = run_parallel_test(
+            models=models,
+            compass_config=compass_config,
+            app_config=app_config,
+            temperature=temperature,
+            system_prompt=system_prompt,
+        )
+
+        all_results[bias_name] = results
+
+    return all_results
+
+
+def print_bias_comparison(all_results: dict):
+    """Print comparison of results across bias prompts."""
+    print("\n" + "=" * 80)
+    print("BIAS INFLUENCE COMPARISON")
+    print("=" * 80)
+
+    # Collect all models
+    all_models = set()
+    for bias_name, results in all_results.items():
+        all_models.update(results["summary"]["model_scores"].keys())
+
+    # Print table header
+    bias_names = list(all_results.keys())
+    header = f"{'Model':<20}"
+    for bias in bias_names:
+        header += f" | {bias:^20}"
+    print(header)
+    print("-" * len(header))
+
+    for model in sorted(all_models):
+        row = f"{model:<20}"
+        for bias_name in bias_names:
+            results = all_results.get(bias_name, {})
+            scores = results.get("summary", {}).get("model_scores", {}).get(model, {})
+            if scores:
+                econ = scores.get("economic", 0)
+                soc = scores.get("social", 0)
+                row += f" | E:{econ:+5.1f} S:{soc:+5.1f}"
+            else:
+                row += f" | {'N/A':^20}"
+        print(row)
+
+    # Print quadrant summary
+    print("\nQuadrant Changes:")
+    print("-" * 60)
+    for model in sorted(all_models):
+        quadrants = []
+        for bias_name in bias_names:
+            results = all_results.get(bias_name, {})
+            scores = results.get("summary", {}).get("model_scores", {}).get(model, {})
+            q = scores.get("quadrant", "N/A")
+            # Abbreviate quadrant names
+            abbrev = {
+                "Libertarian Left": "LL",
+                "Libertarian Right": "LR",
+                "Authoritarian Left": "AL",
+                "Authoritarian Right": "AR",
+                "N/A": "?"
+            }
+            quadrants.append(abbrev.get(q, q[:2]))
+        print(f"  {model:<20}: {' -> '.join(quadrants)}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Run Political Compass test across AI models"
@@ -413,8 +530,8 @@ def main():
     parser.add_argument(
         "--models",
         nargs="+",
-        default=["gpt-5.2", "grok-3", "gemini-2.5-flash"],
-        help="Model IDs to test (default: gpt-5.2 grok-3 gemini-2.5-flash)"
+        default=["gpt-5.2", "grok-3", "gemini-2.0-flash"],
+        help="Model IDs to test (default: gpt-5.2 grok-3 gemini-2.0-flash)"
     )
     parser.add_argument(
         "--temperature",
@@ -440,28 +557,75 @@ def main():
         default=None,
         help="Number of parallel workers (default: number of models)"
     )
+    parser.add_argument(
+        "--bias",
+        nargs="+",
+        default=None,
+        help="Bias prompt names to test (e.g., center auth_left lib_right). Use 'all' for all available."
+    )
+    parser.add_argument(
+        "--list-biases",
+        action="store_true",
+        help="List available bias prompts and exit"
+    )
 
     args = parser.parse_args()
+
+    # List biases if requested
+    if args.list_biases:
+        biases = list_bias_prompts(CONFIG_DIR)
+        print("Available bias prompts:")
+        for b in biases:
+            print(f"  - {b}")
+        return
 
     # Load configs
     compass_config = load_political_compass(args.config)
     app_config = load_config(CONFIG_DIR)
 
-    # Run tests
-    results = run_parallel_test(
-        models=args.models,
-        compass_config=compass_config,
-        app_config=app_config,
-        temperature=args.temperature,
-        max_workers=args.parallel,
-    )
+    # Run with bias prompts if specified
+    if args.bias:
+        if args.bias == ["all"]:
+            bias_prompts = list_bias_prompts(CONFIG_DIR)
+        else:
+            bias_prompts = args.bias
 
-    # Save results
-    output_path = save_results(results, args.output_dir)
-    print(f"\nResults saved to: {output_path}")
+        all_results = run_bias_experiment(
+            models=args.models,
+            bias_prompts=bias_prompts,
+            compass_config=compass_config,
+            app_config=app_config,
+            temperature=args.temperature,
+            config_dir=CONFIG_DIR,
+        )
 
-    # Print summary
-    print_summary(results)
+        # Save all results
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = args.output_dir / f"bias_experiment_{timestamp}.json"
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            json.dump(all_results, f, indent=2)
+        print(f"\nResults saved to: {output_path}")
+
+        # Print comparison
+        print_bias_comparison(all_results)
+
+    else:
+        # Run standard test (no bias prompt)
+        results = run_parallel_test(
+            models=args.models,
+            compass_config=compass_config,
+            app_config=app_config,
+            temperature=args.temperature,
+            max_workers=args.parallel,
+        )
+
+        # Save results
+        output_path = save_results(results, args.output_dir)
+        print(f"\nResults saved to: {output_path}")
+
+        # Print summary
+        print_summary(results)
 
 
 if __name__ == "__main__":
