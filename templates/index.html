@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}JudgeUI - AI Judge Evaluation Framework{% endblock %}
+
+{% block content %}
+<div class="px-4 py-8">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+            JudgeUI
+        </h1>
+        <p class="text-xl text-gray-600 mb-8">
+            Scientific Testing Framework for AI Judge Algorithms
+        </p>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <!-- Generate Arguments -->
+        <a href="/generate" class="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+            <div class="flex items-center mb-4">
+                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                <h3 class="ml-3 text-lg font-semibold text-gray-900">Generate Arguments</h3>
+            </div>
+            <p class="text-gray-600">
+                Create debate arguments with controlled fault injection for testing AI judges
+            </p>
+        </a>
+
+        <!-- Evaluate Arguments -->
+        <a href="/evaluate" class="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+            <div class="flex items-center mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="ml-3 text-lg font-semibold text-gray-900">Evaluate Arguments</h3>
+            </div>
+            <p class="text-gray-600">
+                Test AI judges on argument quality, fault detection, and scoring accuracy
+            </p>
+        </a>
+
+        <!-- CMV Corpus -->
+        <a href="/cmv" class="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+            <div class="flex items-center mb-4">
+                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                </svg>
+                <h3 class="ml-3 text-lg font-semibold text-gray-900">CMV Corpus</h3>
+            </div>
+            <p class="text-gray-600">
+                Explore real persuasive arguments from Reddit's ChangeMyView community
+            </p>
+        </a>
+
+        <!-- Political Compass -->
+        <a href="/political-compass" class="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+            <div class="flex items-center mb-4">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <h3 class="ml-3 text-lg font-semibold text-gray-900">Political Compass</h3>
+            </div>
+            <p class="text-gray-600">
+                Test AI models for political bias using the 62-question Political Compass
+            </p>
+        </a>
+
+        <!-- Browse Data -->
+        <a href="/browse" class="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+            <div class="flex items-center mb-4">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                </svg>
+                <h3 class="ml-3 text-lg font-semibold text-gray-900">Browse Arguments</h3>
+            </div>
+            <p class="text-gray-600">
+                View all generated arguments, experiments, and evaluation results
+            </p>
+        </a>
+
+        <!-- Documentation -->
+        <a href="https://github.com/mochienterprises/JudgeUI" target="_blank" class="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+            <div class="flex items-center mb-4">
+                <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="ml-3 text-lg font-semibold text-gray-900">Documentation</h3>
+            </div>
+            <p class="text-gray-600">
+                Read the full documentation and API reference on GitHub
+            </p>
+        </a>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Framework Capabilities</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="text-center">
+                <p class="text-3xl font-bold text-indigo-600">4</p>
+                <p class="text-sm text-gray-600">LLM Providers</p>
+            </div>
+            <div class="text-center">
+                <p class="text-3xl font-bold text-green-600">19</p>
+                <p class="text-sm text-gray-600">Fault Types</p>
+            </div>
+            <div class="text-center">
+                <p class="text-3xl font-bold text-purple-600">293k</p>
+                <p class="text-sm text-gray-600">CMV Arguments</p>
+            </div>
+            <div class="text-center">
+                <p class="text-3xl font-bold text-red-600">62</p>
+                <p class="text-sm text-gray-600">PC Questions</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

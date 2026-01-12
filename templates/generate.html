@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Arguments - JudgeUI{% endblock %}
+
+{% block content %}
+<div class="px-4" x-data="generateApp()">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Generate Arguments</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Generation Form -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Configuration</h2>
+
+                <!-- Topic -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
+                    <select x-model="topic" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">-- Select a topic --</option>
+                        {% for category, topic_list in topics.items() %}
+                            <optgroup label="{{ category.replace('_', ' ').title() }}">
+                                {% for topic in topic_list %}
+                                    <option value="{{ topic.title }}">{{ topic.title }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Custom Topic -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Or enter custom topic</label>
+                    <input x-model="customTopic" type="text" 
+                           placeholder="e.g., 'Cats are better than dogs'"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <!-- Stance -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Stance</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center">
+                            <input type="radio" x-model="stance" value="for" class="mr-2">
+                            <span>For</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" x-model="stance" value="against" class="mr-2">
+                            <span>Against</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Model -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
+                    <select x-model="model" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                        {% for model in models %}
+                            <option value="{{ model.id }}">{{ model.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Faults -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Inject Faults (Optional)</label>
+                    <div class="border border-gray-300 rounded-md p-4 max-h-64 overflow-y-auto">
+                        {% for category, fault_list in faults.items() %}
+                            <div class="mb-3">
+                                <p class="font-medium text-gray-700 text-sm mb-2">{{ category.replace('_', ' ').title() }}</p>
+                                {% for fault in fault_list %}
+                                    <label class="flex items-start mb-2">
+                                        <input type="checkbox" 
+                                               :value="'{{ fault.id }}'"
+                                               x-model="selectedFaults"
+                                               class="mt-1 mr-2">
+                                        <span class="text-sm">
+                                            <span class="font-medium">{{ fault.id }}</span>
+                                            <span class="text-gray-600"> - {{ fault.description }}</span>
+                                            <span class="text-red-600 text-xs">({{ fault.severity }})</span>
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button @click="generate" 
+                        :disabled="loading || (!topic && !customTopic)"
+                        class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    <span x-show="!loading">Generate Argument</span>
+                    <span x-show="loading">Generating...</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Panel -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow p-6 sticky top-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Result</h2>
+
+                <div x-show="error" class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm" x-cloak>
+                    <strong>Error:</strong> <span x-text="error"></span>
+                </div>
+
+                <div x-show="result" x-cloak>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-600">ID: <span class="font-mono" x-text="result?.id"></span></p>
+                        <p class="text-sm text-gray-600">Topic: <span x-text="result?.topic"></span></p>
+                        <p class="text-sm text-gray-600">Stance: <span x-text="result?.stance"></span></p>
+                        <p class="text-sm text-gray-600">Expected Score: <span x-text="result?.expected_score"></span></p>
+                        <p class="text-sm text-gray-600">Faults: <span x-text="result?.injected_faults?.length || 0"></span></p>
+                    </div>
+
+                    <div class="mb-4">
+                        <p class="text-sm font-medium text-gray-700 mb-2">Argument Preview:</p>
+                        <p class="text-sm text-gray-600 italic" x-text="result?.text?.substring(0, 200) + '...'"></p>
+                    </div>
+
+                    <button @click="viewFull" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 mb-2">
+                        View Full Argument
+                    </button>
+
+                    <a href="/evaluate" class="block w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 text-center">
+                        Evaluate This Argument
+                    </a>
+                </div>
+
+                <div x-show="!result && !loading && !error" class="text-center text-gray-400 py-12">
+                    <p>Generated arguments will appear here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Argument Modal -->
+    <div x-show="showModal" 
+         x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+         @click.self="showModal = false">
+        <div class="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-xl font-semibold">Full Argument</h3>
+                <button @click="showModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="prose max-w-none">
+                <p x-text="result?.text"></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function generateApp() {
+    return {
+        topic: '',
+        customTopic: '',
+        stance: 'for',
+        model: 'claude-sonnet-4-5',
+        selectedFaults: [],
+        loading: false,
+        error: null,
+        result: null,
+        showModal: false,
+
+        async generate() {
+            this.loading = true;
+            this.error = null;
+            this.result = null;
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        topic: this.customTopic || this.topic,
+                        stance: this.stance,
+                        model: this.model,
+                        faults: this.selectedFaults
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.result = data.argument;
+                } else {
+                    this.error = data.error;
+                }
+            } catch (e) {
+                this.error = 'Failed to generate argument: ' + e.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        viewFull() {
+            this.showModal = true;
+        }
+    }
+}
+</script>
+{% endblock %}
