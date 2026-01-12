@@ -1,0 +1,10 @@
+# Core JudgeUI dependencies
+anthropic>=0.18.0
+openai>=1.12.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+convokit
+google-generativeai
+
+# Web UI dependencies
+flask>=3.0.0

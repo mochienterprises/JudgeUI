@@ -1,227 +1,408 @@
-# JudgeUI v1 - Debate Argument Evaluator
+# JudgeUI - AI Judge Evaluation Framework
 
-A terminal-based tool for testing AI judge algorithms on synthetic debate arguments.
+**A web-based and CLI framework for testing AI models' ability to evaluate argument quality.**
 
----
-
-## Project Overview
-
-**Goal:** Validate that an AI can accurately judge argument quality regardless of stance or topic.
-
-**Problem:** We're building a debate platform where AI judges user arguments. Before deploying, we need to confirm the AI can:
-- Distinguish low, medium, and high quality arguments
-- Score fairly without bias toward FOR or AGAINST positions
-- Detect logical fallacies reliably
-
-**Solution:** Generate controlled synthetic arguments at known quality levels, evaluate them blind, and verify the AI ranks them correctly.
+Built for scientific testing of AI judges across multiple models, with fault injection, real-world corpus integration, and political bias measurement.
 
 ---
 
-## Current State
+## 🆕 What's New in This Branch
 
-✅ **Working:**
-- Single-file CLI tool (`debate.py`)
-- Synthetic argument generation (low/medium/high × for/against)
-- Blind evaluation (AI judges without seeing the topic)
-- Results table with scores, fallacies, and reasoning
-- Ranking validation (checks Low < Medium < High)
-- Bias detection (average point difference between stances)
-- Full argument text included in results
-- Markdown export for team review
+### **Web UI (NEW!)**
+Complete Flask-based web interface providing:
+- **Interactive Argument Generation** - Select topics, inject faults, generate instantly
+- **Custom Text Evaluation** - Paste any argument and evaluate it with multiple AI judges
+- **CMV Corpus Explorer** - Browse and sample from 293k real Reddit arguments
+- **Political Compass Testing** - Visual, interactive bias measurement with real-time charts
+- **Results Dashboard** - Browse all arguments, experiments, and evaluations
 
-✅ **Supported Models:**
-- Anthropic (Claude Sonnet 4.5)
-- OpenAI (GPT-4o)
+**No command line required!** Access everything at http://localhost:5000
 
-📋 **Planned:**
-- Gemini support
-- Grok support
-- Single argument evaluation mode (paste your own argument)
 ---
 
-## Architecture
+## What It Does
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         INPUT                                │
-│                                                              │
-│   Select provider: Anthropic or OpenAI                      │
-│   Topic: "religion does more harm than good"                │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  ARGUMENT GENERATOR                          │
-│                                                              │
-│   Creates 6 synthetic arguments:                            │
-│                                                              │
-│   FOR (supports topic)      AGAINST (opposes topic)         │
-│   ├── Low quality           ├── Low quality                 │
-│   ├── Medium quality        ├── Medium quality              │
-│   └── High quality          └── High quality                │
-│                                                              │
-│   Quality Definitions:                                       │
-│   • Low: Fallacies, emotional, anecdotal, ad hominem        │
-│   • Medium: Some logic, weak evidence, minor gaps           │
-│   • High: Strong logic, cited sources, steelmans opponent   │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   BLIND EVALUATOR                            │
-│                                                              │
-│   Each argument evaluated WITHOUT topic context             │
-│   Returns: Score (0-100), Fallacies, Reasoning              │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      VALIDATION                              │
-│                                                              │
-│   • Ranking Check: Low < Medium < High for both stances?   │
-│   • Bias Check: Average point difference between stances    │
-└─────────────────────────────────────────────────────────────┘
-```
+JudgeUI helps you answer questions like:
+- Can Claude detect logical fallacies better than GPT-4?
+- Does this AI model have political bias?
+- Can AI judges identify genuinely persuasive arguments?
+- How do different system prompts affect evaluation quality?
+
+**Core Features:**
+- 🌐 **Web UI** - Interactive interface for generation and evaluation *(NEW!)*
+- 🧪 **Fault Injection** - Test with arguments containing known flaws
+- 📊 **Multi-Model Testing** - Compare Claude, GPT, Gemini side-by-side
+- 🗳️ **Political Compass** - Measure model bias scientifically
+- 💬 **Real Arguments** - 293k arguments from Reddit's ChangeMyView
 
 ---
 
 ## Quick Start
 
-```bash
-# Clone the repo
-git clone https://github.com/YOUR_USERNAME/JudgeUI.git
-cd JudgeUI
+### Installation
 
-# Install dependencies
+```bash
+# Clone and install
+git clone https://github.com/mochienterprises/JudgeUI.git
+cd JudgeUI
 pip install -r requirements.txt
 
-# Set up your API keys
+# Set up API keys
 cp .env.example .env
-# Edit .env and add your keys
+# Edit .env with your keys (at minimum: ANTHROPIC_API_KEY)
+```
 
-# Run it
-python debate.py
+### Web UI (Recommended)
+
+```bash
+# Install Flask
+pip install flask
+
+# Run the web interface
+python app.py
+
+# Open http://localhost:5000
+```
+
+**Web UI Features:**
+- Generate arguments with controlled faults
+- Evaluate any text (paste your own arguments)
+- Explore 293k CMV arguments
+- Run Political Compass tests
+- Visual results and comparisons
+
+---
+
+## 🔄 What's Different from Main Branch
+
+| Feature | Main Branch (CLI Only) | This Branch (+ Web UI) |
+|---------|----------------------|------------------------|
+| Generate Arguments | ✅ Command line only | ✅ **Interactive web form** |
+| Evaluate Arguments | ✅ Existing args only | ✅ **+ Paste custom text** |
+| Political Compass | ✅ CLI results as JSON | ✅ **+ Visual chart & history** |
+| CMV Corpus | ✅ Sample via CLI | ✅ **+ Browse & explore UI** |
+| User Experience | Terminal-based | **Web-based + Terminal** |
+| Setup Required | Python + CLI knowledge | **Just open browser** |
+
+**Key Improvements:**
+- Zero barrier to entry (no CLI needed)
+- Visual feedback and results
+- Real-time argument evaluation
+- Interactive corpus exploration
+- Professional demo-ready interface
+
+---
+
+## 🎨 Web UI Overview (NEW!)
+
+The web interface provides a complete, user-friendly alternative to the CLI tools:
+
+### **Pages:**
+
+#### 1. Generate Arguments (`/generate`)
+- Select from 40+ curated debate topics or enter custom topics
+- Choose stance (for/against)
+- Select which logical fallacies to inject (19 types available)
+- Choose AI model for generation
+- Instantly generate and preview arguments
+- Direct link to evaluate generated arguments
+
+#### 2. Evaluate Arguments (`/evaluate`)
+**Two modes:**
+- **Existing Arguments** - Browse and evaluate previously generated arguments
+- **Custom Text** ⭐ - Paste ANY text and get instant evaluation
+
+**Features:**
+- Multiple judge models (Claude, GPT, Gemini)
+- Adjustable temperature and evaluator prompts
+- Real-time score (0-100)
+- Detected faults with descriptions
+- Ground truth comparison for generated arguments
+- Judge's reasoning displayed
+
+#### 3. CMV Corpus Explorer (`/cmv`)
+- View corpus statistics (293k utterances, 3k conversations)
+- Sample random argument pairs
+- Compare winning vs losing arguments
+- Full text viewing with modal
+
+#### 4. Political Compass Testing (`/political-compass`)
+- Run the full 62-question Political Compass test on any model
+- Test baseline position or bias-manipulated positions
+- Visual compass chart showing results
+- Economic (-10 to +10) and Social (-10 to +10) axes
+- View all 62 question responses
+- Test history to compare multiple runs
+
+#### 5. Browse (`/browse`)
+- Table view of all generated arguments
+- Filter by topic, stance, source
+- Quick access to evaluate any argument
+
+### **Screenshots:**
+
+*(Add screenshots here after deployment)*
+
+---
+
+## Command Line (Advanced Users)
+
+For batch processing and experiments, use the CLI tools:
+
+```bash
+# Generate an argument with specific faults
+python generate_arguments.py --topic "Universal healthcare" --stance for --faults strawman cherry_picking
+
+# Evaluate it with Claude
+python run_experiment.py experiments/quick-test.yaml
+
+# Test political bias
+python run_political_compass.py --models claude-sonnet-4-5
+
+# CMV persuasion detection
+python run_cmv_experiment.py --pairs 20 --models claude-sonnet-4-5
 ```
 
 ---
 
-## Example Session
+## Architecture
 
 ```
-================================================================================
-DEBATE EVALUATION TOOL
-================================================================================
-Available AI providers:
-1. Anthropic (Claude Sonnet 4.5)
-2. OpenAI (GPT-4o)
-Select provider (1 or 2): 2
-Using OPENAI
-
-Topic: religion does more harm than good
-
-Generating arguments...
-Evaluating...
-
-Results saved to results/debate_12341222_134212.md (date and time stuff),
-(I personally just rename the file to what I prompted.)
+Web UI (Flask)
+    ↓
+Core Framework (Python)
+    ↓
+┌─────────────┬──────────────┬────────────┐
+│  Generator  │  Evaluator   │  Analysis  │
+│  - Topics   │  - Blind     │  - Scores  │
+│  - Faults   │  - Multi-    │  - Bias    │
+│  - Stances  │    model     │  - Faults  │
+└─────────────┴──────────────┴────────────┘
+    ↓               ↓              ↓
+┌─────────────────────────────────────────┐
+│  LLM Providers                          │
+│  Anthropic • OpenAI • Google • xAI      │
+└─────────────────────────────────────────┘
 ```
+
+**Key Components:**
+- `app.py` - Web interface
+- `src/generator.py` - Argument generation with fault injection
+- `src/evaluator.py` - Blind evaluation system
+- `src/convokit_loader.py` - CMV corpus integration
+- `config/` - Models, faults, topics, prompts
 
 ---
 
-## Example Output
-
-### Summary
-
-| Stance | Quality | Score | Fallacies |
-|--------|---------|-------|-----------|
-| FOR | low | 20 | hasty_generalization, straw_man, ad_hominem, false_dilemma, cherry_picking, slippery_slope, appeal_to_emotion |
-| FOR | medium | 60 | Hasty Generalization, Selective Attention |
-| FOR | high | 85 | None |
-| AGAINST | low | 30 | Appeal to Emotion, Straw Man, Hasty Generalization, No True Scotsman, Ad Hominem |
-| AGAINST | medium | 70 | None |
-| AGAINST | high | 85 | None |
-
-**Ranking Correct:** Yes  
-**Average Bias:** 6.7 points
-
-### Sample Generated Argument (FOR - Low Quality)
-
-> Religion is the root of all evil, and it undeniably does more harm than good. Anyone who supports religion clearly hasn't opened their eyes to the damage it has caused throughout history. It's obvious that religion is solely responsible for all wars and conflicts in the world...
-
-### Sample Generated Argument (FOR - High Quality)
-
-> The argument systematically addresses both the positive and negative impacts of religion, using evidence and examples to support the claim that religion can cause more harm than good. It effectively anticipates counterarguments and offers a balanced view by highlighting secular alternatives...
-
----
-
-## Output Format
-
-Results are saved as markdown files in the `results/` folder:
-
-```markdown
-# Debate Evaluation Results
-
-**Topic:** religion does more harm than good
-**Date:** 2025-12-22 05:35:22
-**Provider:** OPENAI
-**Model:** gpt-4o
-
-## Summary
-- **Ranking Correct:** Yes
-- **Average Bias:** 6.7 points
-
-## Detailed Results
-| Stance | Quality | Score | Fallacies | Reasoning |
-|--------|---------|-------|-----------|-----------|
-| FOR | low | 20 | ... | ... |
-...
-
-## Generated Arguments
-### FOR - LOW Quality
-[Full argument text]
-...
-```
-
----
-
-## File Structure
+## Project Structure
 
 ```
-JudgeUI_V1/
-├── debate.py           # Main script
-├── .env                # Your API keys (not tracked)
-├── .env.example        # Template for API keys
-├── requirements.txt    # Python dependencies
-├── README.md           # This file
-└── results/            # Generated reports (not tracked)
+JudgeUI/
+├── app.py                    # 🆕 Web UI (Flask)
+├── templates/                # 🆕 Web UI templates
+│   ├── base.html             #     Shared layout
+│   ├── index.html            #     Homepage
+│   ├── generate.html         #     Argument generation
+│   ├── evaluate.html         #     Evaluation (existing + custom text)
+│   ├── cmv.html              #     CMV corpus explorer
+│   ├── browse.html           #     Argument browser
+│   └── political_compass.html#     Political Compass testing
+├── src/                      # Core framework
+│   ├── providers/            # LLM integrations
+│   ├── generator.py          # Argument generation
+│   ├── evaluator.py          # Evaluation engine
+│   ├── experiment.py         # Batch experiments
+│   ├── convokit_loader.py    # CMV corpus
+│   └── analysis.py           # Results analysis
+├── config/                   # Configuration
+│   ├── models.yaml           # Model registry
+│   ├── faults.yaml           # 19 fault types
+│   ├── topics.yaml           # 40+ debate topics
+│   └── prompts/              # System prompts
+├── run_*.py                  # CLI tools
+└── results/                  # Output data
 ```
 
 ---
 
 ## Configuration
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `ANTHROPIC_API_KEY` | Your Claude API key | For Anthropic |
-| `OPENAI_API_KEY` | Your OpenAI API key | For OpenAI |
+### Supported Models
 
-You need at least one API key.
+**Anthropic:** Claude Sonnet 4.5, Claude 4 Opus  
+**OpenAI:** GPT-4o, GPT-5.2, o1  
+**Google:** Gemini 2.0 Flash, Gemini 2.5 Flash/Pro  
+**xAI:** Grok-2, Grok-3
+
+### Fault Types (19 total)
+
+**Logical Fallacies:** strawman, circular_reasoning, false_dichotomy, false_cause, hasty_generalization, non_sequitur, slippery_slope
+
+**Intellectual Dishonesty:** ad_hominem, red_herring, moving_goalposts, cherry_picking, gaslighting
+
+**Structural Failures:** no_evidence, contradictory_claims, unsupported_conclusion, poor_cohesion
+
+Each fault has a severity score (-10 to -15 points) used for ground truth calculation.
+
+### Topics
+
+40+ curated debate topics across categories:
+- Political (gun control, immigration, UBI)
+- Economic (minimum wage, wealth tax, free trade)
+- Social (death penalty, drug legalization, prison reform)
+- Technology (AI regulation, data privacy, autonomous vehicles)
+- Environmental (carbon tax, nuclear energy, geoengineering)
+- Healthcare (universal healthcare, vaccine mandates, drug pricing)
+- Education (free college, school choice, standardized testing)
 
 ---
 
-## Roadmap
+## Example Workflows
 
-- [x] Anthropic Claude support
-- [x] OpenAI GPT support
-- [x] Markdown export with full arguments
-- [x] Fallacy detection
-- [x] Bias measurement
-- [ ] Google Gemini support
-- [ ] xAI Grok support
-- [ ] Single argument evaluation mode
-- [ ] Configurable quality definitions
+### Web UI: Evaluate Custom Text
+
+1. Go to http://localhost:5000/evaluate
+2. Click "Custom Text" tab
+3. Paste any argument
+4. Select judge model (Claude, GPT, etc.)
+5. Get instant score + detected faults
+
+### CLI: Generate & Test Arguments
+
+```bash
+# Generate argument with known faults
+python generate_arguments.py \
+  --topic gun-control \
+  --stance for \
+  --faults strawman ad_hominem \
+  --model claude-sonnet-4-5
+
+# Run evaluation experiment
+python run_experiment.py experiments/quick-test.yaml
+
+# Analyze results
+python analyze.py <experiment_id>
+```
+
+### Political Bias Testing
+
+```bash
+# Measure baseline position
+python run_political_compass.py --models claude-sonnet-4-5 gpt-4o
+
+# Test bias manipulation
+python run_political_compass.py \
+  --models claude-sonnet-4-5 \
+  --bias baseline auth_left auth_right lib_left lib_right
+
+# Results show Economic (-10 to +10) and Social (-10 to +10) scores
+```
+
+---
+
+## API Keys
+
+Required in `.env`:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...     # For Claude models
+OPENAI_API_KEY=sk-...            # For GPT models
+GEMINI_API_KEY=AIza...           # For Gemini models
+GROK_API_KEY=xai-...             # For Grok models
+```
+
+You only need keys for models you want to test.
+
+---
+
+## Results & Data
+
+**Experiments:** Saved as JSON in `results/experiments/`  
+**CMV Tests:** Saved in `results/cmv/`  
+**Political Compass:** Saved in `results/political_compass/`  
+**Arguments:** Stored in `arguments/generated/`, `arguments/curated/`
+
+Each result includes:
+- Model configurations
+- Evaluation scores
+- Detected faults
+- Ground truth comparisons (when applicable)
+- Timestamps and metadata
+
+---
+
+## Current Development Status
+
+### ✅ Working
+- **🆕 Web UI for generation and evaluation** - Complete Flask interface with 5 pages
+- **🆕 Custom text evaluation** - Paste any argument for instant evaluation
+- **🆕 Interactive Political Compass testing** - Visual charts and real-time results
+- Multi-provider LLM support (4 providers, 10+ models)
+- Fault injection system (19 fault types)
+- CMV corpus integration (293k arguments)
+- Political Compass testing (62 questions)
+- Parallel experiment execution
+- CLI tools for batch processing
+
+### 🚧 In Progress
+- Results visualization/dashboards (charts, graphs)
+- Additional corpora (debate.org, persuasion-reddit)
+- Advanced statistical analysis
+- Deployment guides
+
+### 📋 Planned
+- Team collaboration features
+- A/B testing framework
+- Custom fault definitions via UI
+- Real-time experiment monitoring
+
+---
+
+## Branch Information
+
+**Main updates in this branch:**
+- Complete web UI implementation (`app.py` + templates)
+- Custom text evaluation capability
+- Interactive Political Compass testing with visualizations
+- CMV corpus explorer with sampling
+- Improved user experience for all core features
+
+**Based on:** Framework updates including Political Compass integration, CMV corpus support, and multi-provider architecture
+
+---
+
+## Contributing
+
+This is an academic research project. Contributions welcome via issues and pull requests.
+
+**Areas of interest:**
+- New LLM provider integrations
+- Additional argument corpora
+- Improved fault taxonomy
+- Evaluation prompt engineering
+- Visualization/analysis tools
+
+---
+
+## Citation
+
+If you use JudgeUI in research, please cite:
+
+```
+JudgeUI: A Framework for Testing AI Judge Algorithms
+https://github.com/mochienterprises/JudgeUI
+```
+
 ---
 
 ## License
 
-MIT
+MIT License - See LICENSE file for details
+
+---
+
+## Acknowledgments
+
+- **ConvoKit** - For the ChangeMyView corpus
+- **Political Compass** - For the 62-question test framework
+- Built with Flask, Anthropic API, OpenAI API, Google AI API
