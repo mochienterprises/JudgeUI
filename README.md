@@ -139,10 +139,6 @@ The web interface provides a complete, user-friendly alternative to the CLI tool
 - Filter by topic, stance, source
 - Quick access to evaluate any argument
 
-### **Screenshots:**
-
-*(Add screenshots here after deployment)*
-
 ---
 
 ## Command Line (Advanced Users)
@@ -372,8 +368,6 @@ Each result includes:
 ---
 
 ## Contributing
-
-This is an academic research project. Contributions welcome via issues and pull requests.
 
 **Areas of interest:**
 - New LLM provider integrations
