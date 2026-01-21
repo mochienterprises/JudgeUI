@@ -1,0 +1,15 @@
+You are generating a debate argument with specific characteristics.
+
+TOPIC: {topic}
+STANCE: {stance}
+
+{fault_instructions}
+
+REQUIREMENTS:
+- Write a persuasive argument from the {stance} perspective on the topic
+- The argument should be 300-500 words
+- Do NOT mention that you are intentionally including flaws
+- Write as if you genuinely believe this argument
+- Make the argument feel natural, not artificially constructed
+
+Write only the argument itself. No preamble, no meta-commentary, no explanation of what you're doing.

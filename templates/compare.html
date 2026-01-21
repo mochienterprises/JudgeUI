@@ -1,0 +1,751 @@
+{% extends "base.html" %}
+
+{% block title %}Model Comparison - JudgeUI{% endblock %}
+
+{% block content %}
+<div class="px-4" x-data="compareApp()">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Model Comparison</h1>
+
+    <!-- Workflow Tabs -->
+    <div class="bg-white rounded-lg shadow mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="flex -mb-px">
+                <button @click="workflow = 'generate'"
+                        :class="workflow === 'generate' ? 'border-indigo-500 text-indigo-600 bg-indigo-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="flex-1 py-4 px-4 text-center border-b-2 font-medium text-sm">
+                    Generate & Compare
+                </button>
+                <button @click="workflow = 'evaluate'"
+                        :class="workflow === 'evaluate' ? 'border-indigo-500 text-indigo-600 bg-indigo-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="flex-1 py-4 px-4 text-center border-b-2 font-medium text-sm">
+                    Multi-Judge Evaluation
+                </button>
+                <button @click="workflow = 'cross'"
+                        :class="workflow === 'cross' ? 'border-indigo-500 text-indigo-600 bg-indigo-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="flex-1 py-4 px-4 text-center border-b-2 font-medium text-sm">
+                    Cross-Evaluation
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Generate & Compare Workflow -->
+    <div x-show="workflow === 'generate'" x-cloak>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Configuration -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Configuration</h2>
+
+                    <!-- Topic -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Topic</label>
+                        <input x-model="topic" type="text"
+                               placeholder="Enter debate topic..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <!-- Stance -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Stance</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center">
+                                <input type="radio" x-model="stance" value="for" class="mr-2">
+                                <span>For</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" x-model="stance" value="against" class="mr-2">
+                                <span>Against</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Models -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Generator Models <span class="text-gray-500">(<span x-text="selectedGenerators.length"></span>)</span>
+                        </label>
+                        <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-y-auto">
+                            <template x-for="model in models" :key="model.id">
+                                <label class="flex items-center mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                    <input type="checkbox"
+                                           :value="model.id"
+                                           x-model="selectedGenerators"
+                                           class="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <span class="text-sm" x-text="model.name"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <button @click="generateCompare"
+                            :disabled="loading || !topic || selectedGenerators.length === 0"
+                            class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:bg-gray-400">
+                        <span x-show="!loading">Generate with <span x-text="selectedGenerators.length"></span> Models</span>
+                        <span x-show="loading">Generating...</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Generated Arguments</h2>
+
+                    <div x-show="error" class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm" x-cloak>
+                        <span x-text="error"></span>
+                    </div>
+
+                    <div x-show="generationResults" x-cloak>
+                        <div class="mb-4 text-sm text-gray-600">
+                            <span class="text-green-600 font-medium" x-text="generationSummary?.successes"></span> succeeded,
+                            <span class="text-red-600 font-medium" x-text="generationSummary?.failures"></span> failed
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <template x-for="(result, modelId) in generationResults" :key="modelId">
+                                <div class="border border-gray-200 rounded-lg p-4"
+                                     :class="result.error ? 'bg-red-50' : 'bg-white'">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h3 class="font-semibold" x-text="modelId"></h3>
+                                        <span x-show="result.error" class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded">Failed</span>
+                                    </div>
+                                    <div x-show="result.error" class="text-sm text-red-600" x-text="result.error"></div>
+                                    <div x-show="!result.error && result.argument">
+                                        <p class="text-xs text-gray-500 mb-2 font-mono" x-text="result.argument?.id"></p>
+                                        <p class="text-sm text-gray-700 line-clamp-4" x-text="result.argument?.text?.substring(0, 300) + '...'"></p>
+                                        <button @click="viewArgument(result.argument)"
+                                                class="mt-2 text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200">
+                                            View Full
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Quick Cross-Evaluate Button -->
+                        <div class="mt-6 pt-4 border-t border-gray-200" x-show="Object.keys(generationResults || {}).length > 0">
+                            <button @click="setupCrossEval"
+                                    class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
+                                Cross-Evaluate These Arguments
+                            </button>
+                        </div>
+                    </div>
+
+                    <div x-show="!generationResults && !loading && !error" class="text-center text-gray-400 py-12">
+                        <p>Generated arguments will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Judge Evaluation Workflow -->
+    <div x-show="workflow === 'evaluate'" x-cloak>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Configuration -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Configuration</h2>
+
+                    <!-- Arguments -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Arguments <span class="text-gray-500">(<span x-text="selectedArguments.length"></span>)</span>
+                        </label>
+                        <div class="border border-gray-300 rounded-md max-h-48 overflow-y-auto">
+                            <template x-for="arg in existingArguments" :key="arg.id">
+                                <label class="flex items-center p-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox"
+                                           :value="arg.id"
+                                           x-model="selectedArguments"
+                                           class="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900 truncate" x-text="arg.topic"></p>
+                                        <p class="text-xs text-gray-500" x-text="arg.id"></p>
+                                    </div>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Judges -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Judge Models <span class="text-gray-500">(<span x-text="selectedJudges.length"></span>)</span>
+                        </label>
+                        <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-y-auto">
+                            <template x-for="model in models" :key="model.id">
+                                <label class="flex items-center mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                    <input type="checkbox"
+                                           :value="model.id"
+                                           x-model="selectedJudges"
+                                           class="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <span class="text-sm" x-text="model.name"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <button @click="evaluateCompare"
+                            :disabled="loading || selectedArguments.length === 0 || selectedJudges.length === 0"
+                            class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:bg-gray-400">
+                        <span x-show="!loading">Evaluate <span x-text="selectedArguments.length"></span> Arguments with <span x-text="selectedJudges.length"></span> Judges</span>
+                        <span x-show="loading">Evaluating...</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Matrix -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Evaluation Matrix</h2>
+
+                    <div x-show="error" class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm" x-cloak>
+                        <span x-text="error"></span>
+                    </div>
+
+                    <div x-show="evaluationMatrix" x-cloak>
+                        <!-- Stats Summary -->
+                        <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <p class="text-2xl font-bold text-indigo-600" x-text="matrixStats?.overall?.avg_score || '-'"></p>
+                                    <p class="text-xs text-gray-600">Average Score</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-green-600" x-text="matrixStats?.overall?.successes || 0"></p>
+                                    <p class="text-xs text-gray-600">Successes</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-red-600" x-text="matrixStats?.overall?.failures || 0"></p>
+                                    <p class="text-xs text-gray-600">Failures</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Matrix Table -->
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Argument</th>
+                                        <template x-for="judgeId in getJudgeIds()" :key="judgeId">
+                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                                                <span x-text="judgeId.split('-').slice(0, 2).join('-')"></span>
+                                            </th>
+                                        </template>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase bg-gray-100">Avg</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="(judgeResults, argId) in evaluationMatrix?.results || {}" :key="argId">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-3 py-2 whitespace-nowrap text-xs font-mono text-gray-900" x-text="argId"></td>
+                                            <template x-for="(result, judgeId) in judgeResults" :key="judgeId">
+                                                <td class="px-3 py-2 text-center">
+                                                    <template x-if="result.error === 'Self-evaluation excluded'">
+                                                        <span class="text-xs text-gray-400">N/A</span>
+                                                    </template>
+                                                    <template x-if="result.error && result.error !== 'Self-evaluation excluded'">
+                                                        <span class="text-xs text-red-500" title="Error">-</span>
+                                                    </template>
+                                                    <template x-if="!result.error && result.evaluation">
+                                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium cursor-pointer"
+                                                              :class="result.evaluation.score >= 70 ? 'bg-green-100 text-green-800' : result.evaluation.score >= 40 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'"
+                                                              @click="showEvalDetail(result, argId, judgeId)"
+                                                              x-text="result.evaluation.score"></span>
+                                                    </template>
+                                                </td>
+                                            </template>
+                                            <td class="px-3 py-2 text-center bg-gray-50">
+                                                <span class="font-medium" x-text="matrixStats?.by_argument?.[argId]?.avg_score || '-'"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                                <tfoot class="bg-gray-100">
+                                    <tr>
+                                        <td class="px-3 py-2 text-xs font-medium text-gray-500">Judge Avg</td>
+                                        <template x-for="judgeId in getJudgeIds()" :key="judgeId + '-avg'">
+                                            <td class="px-3 py-2 text-center">
+                                                <span class="font-medium" x-text="matrixStats?.by_judge?.[judgeId]?.avg_score || '-'"></span>
+                                            </td>
+                                        </template>
+                                        <td class="px-3 py-2 text-center bg-gray-200">
+                                            <span class="font-bold" x-text="matrixStats?.overall?.avg_score || '-'"></span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div x-show="!evaluationMatrix && !loading && !error" class="text-center text-gray-400 py-12">
+                        <p>Select arguments and judges, then click Evaluate</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cross-Evaluation Workflow -->
+    <div x-show="workflow === 'cross'" x-cloak>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Configuration -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Cross-Evaluation Setup</h2>
+
+                    <p class="text-sm text-gray-600 mb-4">
+                        In cross-evaluation, each model evaluates arguments generated by other models.
+                        Self-evaluation (model judging its own argument) is excluded by default.
+                    </p>
+
+                    <!-- Generator → Argument Mapping -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Generator → Argument Mapping
+                        </label>
+                        <div class="space-y-2">
+                            <template x-for="model in models" :key="model.id">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium w-32 truncate" x-text="model.name"></span>
+                                    <select x-model="crossMapping[model.id]"
+                                            class="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md">
+                                        <option value="">-- Select argument --</option>
+                                        <template x-for="arg in existingArguments" :key="arg.id">
+                                            <option :value="arg.id" x-text="`${arg.id} - ${arg.topic.substring(0, 20)}...`"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Use same models as judges -->
+                    <div class="mb-4 p-3 bg-gray-50 rounded-md">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" x-model="useSameAsJudges" class="mr-2 h-4 w-4 text-indigo-600">
+                            <span class="text-sm text-gray-700">Use same models as judges</span>
+                        </label>
+                    </div>
+
+                    <!-- Additional Judges (if not using same) -->
+                    <div class="mb-4" x-show="!useSameAsJudges">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Judge Models <span class="text-gray-500">(<span x-text="crossJudges.length"></span>)</span>
+                        </label>
+                        <div class="border border-gray-300 rounded-md p-3 max-h-32 overflow-y-auto">
+                            <template x-for="model in models" :key="model.id">
+                                <label class="flex items-center mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                    <input type="checkbox"
+                                           :value="model.id"
+                                           x-model="crossJudges"
+                                           class="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <span class="text-sm" x-text="model.name"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Exclude Self-Evaluation Toggle -->
+                    <div class="mb-4 p-3 bg-yellow-50 rounded-md">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" x-model="excludeSelf" class="mr-2 h-4 w-4 text-yellow-600">
+                            <div>
+                                <span class="text-sm font-medium text-yellow-900">Exclude self-evaluation</span>
+                                <p class="text-xs text-yellow-700">Skip when generator = judge</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <button @click="crossEvaluate"
+                            :disabled="loading || !hasCrossMapping()"
+                            class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:bg-gray-400">
+                        <span x-show="!loading">Run Cross-Evaluation</span>
+                        <span x-show="loading">Evaluating...</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Matrix -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Cross-Evaluation Matrix</h2>
+
+                    <div x-show="error" class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm" x-cloak>
+                        <span x-text="error"></span>
+                    </div>
+
+                    <div x-show="crossMatrix" x-cloak>
+                        <!-- Stats Summary -->
+                        <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <p class="text-2xl font-bold text-indigo-600" x-text="crossStats?.overall?.avg_score || '-'"></p>
+                                    <p class="text-xs text-gray-600">Average Score</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-green-600" x-text="crossStats?.overall?.successes || 0"></p>
+                                    <p class="text-xs text-gray-600">Evaluations</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-400" x-text="countSelfExcluded()"></p>
+                                    <p class="text-xs text-gray-600">Self-Excluded</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cross-Eval Matrix Table -->
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Generator</th>
+                                        <template x-for="judgeId in getCrossJudgeIds()" :key="judgeId">
+                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                                                <span x-text="judgeId.split('-').slice(0, 2).join('-')"></span>
+                                            </th>
+                                        </template>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase bg-gray-100">Avg</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="(judgeResults, generatorId) in crossMatrix?.results || {}" :key="generatorId">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900" x-text="generatorId"></td>
+                                            <template x-for="(result, judgeId) in judgeResults" :key="judgeId">
+                                                <td class="px-3 py-2 text-center"
+                                                    :class="generatorId === judgeId ? 'bg-gray-100' : ''">
+                                                    <template x-if="result.error === 'Self-evaluation excluded'">
+                                                        <span class="text-xs text-gray-400 italic">N/A</span>
+                                                    </template>
+                                                    <template x-if="result.error && result.error !== 'Self-evaluation excluded'">
+                                                        <span class="text-xs text-red-500" title="Error">-</span>
+                                                    </template>
+                                                    <template x-if="!result.error && result.evaluation">
+                                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium cursor-pointer"
+                                                              :class="result.evaluation.score >= 70 ? 'bg-green-100 text-green-800' : result.evaluation.score >= 40 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'"
+                                                              @click="showEvalDetail(result, generatorId, judgeId)"
+                                                              x-text="result.evaluation.score"></span>
+                                                    </template>
+                                                </td>
+                                            </template>
+                                            <td class="px-3 py-2 text-center bg-gray-50">
+                                                <span class="font-medium" x-text="crossStats?.by_argument?.[generatorId]?.avg_score || '-'"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                                <tfoot class="bg-gray-100">
+                                    <tr>
+                                        <td class="px-3 py-2 text-xs font-medium text-gray-500">Judge Avg</td>
+                                        <template x-for="judgeId in getCrossJudgeIds()" :key="judgeId + '-avg'">
+                                            <td class="px-3 py-2 text-center">
+                                                <span class="font-medium" x-text="crossStats?.by_judge?.[judgeId]?.avg_score || '-'"></span>
+                                            </td>
+                                        </template>
+                                        <td class="px-3 py-2 text-center bg-gray-200">
+                                            <span class="font-bold" x-text="crossStats?.overall?.avg_score || '-'"></span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div x-show="!crossMatrix && !loading && !error" class="text-center text-gray-400 py-12">
+                        <p>Configure generator-argument mapping and run cross-evaluation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Argument View Modal -->
+    <div x-show="showArgumentModal"
+         x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+         @click.self="showArgumentModal = false">
+        <div class="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto p-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-xl font-semibold">Argument Details</h3>
+                    <p class="text-sm text-gray-600" x-text="modalArgument?.generated_by"></p>
+                </div>
+                <button @click="showArgumentModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-4 text-sm text-gray-600">
+                <p><strong>ID:</strong> <span class="font-mono" x-text="modalArgument?.id"></span></p>
+                <p><strong>Topic:</strong> <span x-text="modalArgument?.topic"></span></p>
+                <p><strong>Stance:</strong> <span x-text="modalArgument?.stance"></span></p>
+            </div>
+            <div class="prose max-w-none">
+                <p x-text="modalArgument?.text"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluation Detail Modal -->
+    <div x-show="showEvalModal"
+         x-cloak
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+         @click.self="showEvalModal = false">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-xl font-semibold">Evaluation Details</h3>
+                    <p class="text-sm text-gray-600">
+                        <span x-text="modalEvalMeta?.judgeId"></span> evaluating <span x-text="modalEvalMeta?.argId"></span>
+                    </p>
+                </div>
+                <button @click="showEvalModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mb-6 text-center">
+                <div class="text-5xl font-bold"
+                     :class="modalEval?.score >= 70 ? 'text-green-600' : modalEval?.score >= 40 ? 'text-yellow-600' : 'text-red-600'"
+                     x-text="modalEval?.score"></div>
+                <p class="text-sm text-gray-600">Score</p>
+            </div>
+
+            <div class="mb-4" x-show="modalEval?.detected_faults?.length > 0">
+                <h4 class="font-semibold text-gray-900 mb-2">Detected Faults</h4>
+                <div class="flex flex-wrap gap-2">
+                    <template x-for="fault in modalEval?.detected_faults || []">
+                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium" x-text="fault"></span>
+                    </template>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-900 mb-2">Reasoning</h4>
+                <p class="text-sm text-gray-700 bg-gray-50 p-3 rounded" x-text="modalEval?.reasoning"></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function compareApp() {
+    return {
+        workflow: 'generate',
+        models: {{ models | tojson }},
+        existingArguments: {{ arguments | tojson }},
+        loading: false,
+        error: null,
+
+        // Generate & Compare
+        topic: '',
+        stance: 'for',
+        selectedGenerators: [],
+        generationResults: null,
+        generationSummary: null,
+
+        // Multi-Judge Evaluation
+        selectedArguments: [],
+        selectedJudges: [],
+        evaluationMatrix: null,
+        matrixStats: null,
+
+        // Cross-Evaluation
+        crossMapping: {},
+        crossJudges: [],
+        useSameAsJudges: true,
+        excludeSelf: true,
+        crossMatrix: null,
+        crossStats: null,
+
+        // Modals
+        showArgumentModal: false,
+        modalArgument: null,
+        showEvalModal: false,
+        modalEval: null,
+        modalEvalMeta: null,
+
+        async generateCompare() {
+            this.loading = true;
+            this.error = null;
+            this.generationResults = null;
+
+            try {
+                const response = await fetch('/api/generate-compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        models: this.selectedGenerators,
+                        topic: this.topic,
+                        stance: this.stance,
+                        faults: [],
+                        save: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.generationResults = data.arguments;
+                    this.generationSummary = data.summary;
+                    // Refresh existing arguments list
+                    await this.refreshArguments();
+                } else {
+                    this.error = data.error;
+                }
+            } catch (e) {
+                this.error = 'Failed to generate: ' + e.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async evaluateCompare() {
+            this.loading = true;
+            this.error = null;
+            this.evaluationMatrix = null;
+
+            try {
+                const response = await fetch('/api/evaluate-compare', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        argument_ids: this.selectedArguments,
+                        judges: this.selectedJudges,
+                        temperature: 0.0,
+                        prompt: 'default'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.evaluationMatrix = data.matrix;
+                    this.matrixStats = data.stats;
+                } else {
+                    this.error = data.error;
+                }
+            } catch (e) {
+                this.error = 'Failed to evaluate: ' + e.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async crossEvaluate() {
+            this.loading = true;
+            this.error = null;
+            this.crossMatrix = null;
+
+            // Build mapping object (filter out empty values)
+            const mapping = {};
+            for (const [model, argId] of Object.entries(this.crossMapping)) {
+                if (argId) mapping[model] = argId;
+            }
+
+            // Determine judges
+            const judges = this.useSameAsJudges ? Object.keys(mapping) : this.crossJudges;
+
+            try {
+                const response = await fetch('/api/cross-evaluate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        arguments: mapping,
+                        judges: judges,
+                        exclude_self: this.excludeSelf,
+                        temperature: 0.0,
+                        prompt: 'default'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.crossMatrix = data.matrix;
+                    this.crossStats = data.stats;
+                } else {
+                    this.error = data.error;
+                }
+            } catch (e) {
+                this.error = 'Failed to cross-evaluate: ' + e.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async refreshArguments() {
+            try {
+                const response = await fetch('/api/arguments');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.existingArguments = data.arguments;
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to refresh arguments:', e);
+            }
+        },
+
+        setupCrossEval() {
+            // Auto-populate cross-mapping from generation results
+            for (const [modelId, result] of Object.entries(this.generationResults || {})) {
+                if (result.argument) {
+                    this.crossMapping[modelId] = result.argument.id;
+                }
+            }
+            this.workflow = 'cross';
+        },
+
+        hasCrossMapping() {
+            return Object.values(this.crossMapping).some(v => v);
+        },
+
+        getJudgeIds() {
+            if (!this.evaluationMatrix?.results) return [];
+            const firstArg = Object.keys(this.evaluationMatrix.results)[0];
+            if (!firstArg) return [];
+            return Object.keys(this.evaluationMatrix.results[firstArg] || {});
+        },
+
+        getCrossJudgeIds() {
+            if (!this.crossMatrix?.results) return [];
+            const firstGen = Object.keys(this.crossMatrix.results)[0];
+            if (!firstGen) return [];
+            return Object.keys(this.crossMatrix.results[firstGen] || {});
+        },
+
+        countSelfExcluded() {
+            let count = 0;
+            for (const judgeResults of Object.values(this.crossMatrix?.results || {})) {
+                for (const result of Object.values(judgeResults)) {
+                    if (result.error === 'Self-evaluation excluded') count++;
+                }
+            }
+            return count;
+        },
+
+        viewArgument(argument) {
+            this.modalArgument = argument;
+            this.showArgumentModal = true;
+        },
+
+        showEvalDetail(result, argId, judgeId) {
+            this.modalEval = result.evaluation;
+            this.modalEvalMeta = { argId, judgeId };
+            this.showEvalModal = true;
+        }
+    }
+}
+</script>
+{% endblock %}

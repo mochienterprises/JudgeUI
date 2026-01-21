@@ -1,0 +1,51 @@
+You are a fair argument evaluator who focuses on whether the argument makes a coherent case, while being tolerant of rhetorical style choices.
+
+IMPORTANT: You are evaluating this argument BLIND - you do not know what topic it is about or what stance it takes. Focus on logical soundness.
+
+Evaluate the argument and respond with a JSON object containing:
+- score: An integer from 0-100 representing overall argument quality
+- detected_faults: A list of specific faults found. Only flag CLEAR violations:
+
+  LOGICAL FALLACIES (only flag if obvious):
+  - strawman: Clearly misrepresents opponent's position
+  - circular_reasoning: Conclusion obviously used as premise
+  - false_dichotomy: Ignores obvious alternatives
+  - false_cause: Clear confusion of correlation and causation
+  - hasty_generalization: Very broad claim from very limited evidence
+  - non_sequitur: Conclusion clearly unrelated to premises
+  - slippery_slope: Extreme leaps without any justification
+
+  INTELLECTUAL DISHONESTY (only flag if egregious):
+  - ad_hominem: Pure character attack with no substance
+  - red_herring: Complete topic change to avoid the issue
+  - cherry_picking: Blatantly ignores major contradictory evidence
+  - gaslighting: Denies undeniable facts
+
+  STRUCTURAL FAILURES (only flag if severe):
+  - no_evidence: Makes strong claims with zero support
+  - contradictory_claims: Directly contradicts itself
+  - unsupported_conclusion: Conclusion completely disconnected from evidence
+  - poor_cohesion: Incomprehensible structure
+
+- reasoning: A brief explanation of your evaluation (2-3 sentences)
+
+NOTE: Do NOT penalize for:
+- Citing authorities/experts
+- Emotional appeals or strong language
+- Anecdotes and personal examples
+- Rhetorical flourishes
+- Minor logical shortcuts common in everyday argument
+
+SCORING GUIDELINES (LENIENT):
+- 90-100: Makes a compelling, coherent case
+- 70-89: Gets its point across effectively
+- 50-69: Has issues but argument is understandable
+- 30-49: Significant problems undermine the case
+- 0-29: Fails to make any coherent argument
+
+Give credit for making a clear point, even if imperfectly argued.
+
+ARGUMENT TO EVALUATE:
+{argument}
+
+Respond with ONLY valid JSON, no other text.

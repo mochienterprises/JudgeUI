@@ -1,0 +1,149 @@
+# Curated Debate Topics by Category
+
+topics:
+  political:
+    - id: gun-control
+      title: "Gun Control"
+      description: "Should there be stricter gun control laws?"
+
+    - id: universal-basic-income
+      title: "Universal Basic Income"
+      description: "Should governments provide a universal basic income to all citizens?"
+
+    - id: electoral-college
+      title: "Electoral College"
+      description: "Should the United States abolish the Electoral College?"
+
+    - id: immigration-policy
+      title: "Immigration Policy"
+      description: "Should countries implement stricter immigration controls?"
+
+    - id: term-limits
+      title: "Congressional Term Limits"
+      description: "Should there be term limits for members of Congress?"
+
+  economic:
+    - id: minimum-wage
+      title: "Minimum Wage"
+      description: "Should the minimum wage be raised to $15/hour or higher?"
+
+    - id: wealth-tax
+      title: "Wealth Tax"
+      description: "Should governments implement a tax on accumulated wealth?"
+
+    - id: free-trade
+      title: "Free Trade"
+      description: "Are free trade agreements beneficial for workers?"
+
+    - id: corporate-tax
+      title: "Corporate Tax Rates"
+      description: "Should corporate tax rates be increased?"
+
+    - id: cryptocurrency-regulation
+      title: "Cryptocurrency Regulation"
+      description: "Should cryptocurrencies be more heavily regulated?"
+
+  social:
+    - id: death-penalty
+      title: "Death Penalty"
+      description: "Should the death penalty be abolished?"
+
+    - id: drug-legalization
+      title: "Drug Legalization"
+      description: "Should recreational drugs be legalized?"
+
+    - id: affirmative-action
+      title: "Affirmative Action"
+      description: "Should affirmative action policies continue in college admissions?"
+
+    - id: social-media-age-limits
+      title: "Social Media Age Limits"
+      description: "Should there be minimum age requirements for social media use?"
+
+    - id: prison-reform
+      title: "Prison Reform"
+      description: "Should prisons focus more on rehabilitation than punishment?"
+
+  technology:
+    - id: ai-regulation
+      title: "AI Regulation"
+      description: "Should artificial intelligence development be more heavily regulated?"
+
+    - id: data-privacy
+      title: "Data Privacy"
+      description: "Should companies be required to delete user data upon request?"
+
+    - id: social-media-liability
+      title: "Social Media Liability"
+      description: "Should social media companies be liable for content posted by users?"
+
+    - id: autonomous-vehicles
+      title: "Autonomous Vehicles"
+      description: "Should fully autonomous vehicles be allowed on public roads?"
+
+    - id: right-to-repair
+      title: "Right to Repair"
+      description: "Should consumers have the right to repair their own electronic devices?"
+
+  environmental:
+    - id: carbon-tax
+      title: "Carbon Tax"
+      description: "Should governments implement a carbon tax?"
+
+    - id: nuclear-energy
+      title: "Nuclear Energy"
+      description: "Should nuclear power be expanded as a clean energy source?"
+
+    - id: meat-consumption
+      title: "Meat Consumption"
+      description: "Should governments discourage meat consumption for environmental reasons?"
+
+    - id: plastic-ban
+      title: "Single-Use Plastic Ban"
+      description: "Should single-use plastics be banned?"
+
+    - id: geoengineering
+      title: "Geoengineering"
+      description: "Should geoengineering be used to combat climate change?"
+
+  healthcare:
+    - id: universal-healthcare
+      title: "Universal Healthcare"
+      description: "Should the government provide universal healthcare?"
+
+    - id: vaccine-mandates
+      title: "Vaccine Mandates"
+      description: "Should vaccines be mandatory for public school attendance?"
+
+    - id: drug-pricing
+      title: "Drug Pricing"
+      description: "Should the government regulate pharmaceutical drug prices?"
+
+    - id: assisted-suicide
+      title: "Assisted Suicide"
+      description: "Should physician-assisted suicide be legal?"
+
+    - id: organ-market
+      title: "Organ Markets"
+      description: "Should there be a legal market for organ donation?"
+
+  education:
+    - id: college-free
+      title: "Free College"
+      description: "Should public college education be free?"
+
+    - id: school-choice
+      title: "School Choice"
+      description: "Should parents receive vouchers to choose their children's schools?"
+
+    - id: standardized-testing
+      title: "Standardized Testing"
+      description: "Should standardized tests be eliminated from college admissions?"
+
+    - id: student-debt
+      title: "Student Debt Forgiveness"
+      description: "Should student loan debt be forgiven?"
+
+    - id: homeschooling-regulation
+      title: "Homeschooling Regulation"
+      description: "Should homeschooling be more strictly regulated?"

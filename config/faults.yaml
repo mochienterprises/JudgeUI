@@ -1,0 +1,96 @@
+# Fault Taxonomy for Argument Quality
+# HARD FAULTS ONLY - These are objectively detrimental to argument quality
+#
+# Removed (legitimate in moderation):
+#   - appeal_to_authority: Citing experts is valid
+#   - appeal_to_emotion/emotional_manipulation: Emotion is part of persuasion
+#   - loaded_language: Word choice is rhetorical skill
+#   - anecdotal_as_proof: Stories can illustrate points
+#   - weasel_words: Sometimes hedging is appropriate
+
+faults:
+  # LOGICAL FALLACIES - Errors in reasoning that invalidate the argument
+  logical:
+    strawman:
+      description: "Misrepresents the opponent's position to make it easier to attack"
+      severity: -15
+      generation_hint: "Deliberately mischaracterize the opposing view as more extreme than it is, then argue against that distortion rather than their actual position"
+
+    circular_reasoning:
+      description: "Uses the conclusion as a premise (begging the question)"
+      severity: -15
+      generation_hint: "Support your main claim by restating it in different words, or assume what you're trying to prove"
+
+    false_dichotomy:
+      description: "Presents only two options when more valid alternatives exist"
+      severity: -12
+      generation_hint: "Frame the issue as having only two possible positions, ignoring obvious middle ground or alternative solutions"
+
+    false_cause:
+      description: "Claims causation from mere correlation or temporal sequence"
+      severity: -12
+      generation_hint: "Claim that because A happened before B, A must have caused B, without any evidence of causal mechanism"
+
+    hasty_generalization:
+      description: "Draws sweeping conclusions from insufficient or unrepresentative evidence"
+      severity: -10
+      generation_hint: "Use one or two cherry-picked examples to make broad claims about an entire category"
+
+    non_sequitur:
+      description: "Conclusion does not logically follow from the premises"
+      severity: -12
+      generation_hint: "Draw a conclusion that has no logical connection to the evidence or reasoning presented"
+
+    slippery_slope:
+      description: "Claims inevitable extreme consequences without justifying the causal chain"
+      severity: -10
+      generation_hint: "Argue that one action will inevitably lead to catastrophe through an unsupported chain of events"
+
+  # INTELLECTUAL DISHONESTY - Deceptive argumentation tactics
+  dishonesty:
+    ad_hominem:
+      description: "Attacks the person's character instead of addressing their argument"
+      severity: -15
+      generation_hint: "Attack the opponent's intelligence, motives, or character as a substitute for engaging with their actual points"
+
+    red_herring:
+      description: "Introduces irrelevant topics to distract from the actual issue"
+      severity: -10
+      generation_hint: "When faced with a difficult point, pivot to an unrelated topic that sounds relevant but avoids the core issue"
+
+    moving_goalposts:
+      description: "Changes the criteria for proof after evidence is presented"
+      severity: -12
+      generation_hint: "When evidence is provided, dismiss it and demand different evidence, never accepting any proof as sufficient"
+
+    cherry_picking:
+      description: "Selectively presents only evidence that supports the conclusion while ignoring contradictory evidence"
+      severity: -12
+      generation_hint: "Present only data points that support your view while completely ignoring well-known contradictory evidence"
+
+    gaslighting:
+      description: "Denies or distorts obvious facts to confuse the discussion"
+      severity: -15
+      generation_hint: "Flatly deny well-established facts or claim the opponent said things they didn't say"
+
+  # STRUCTURAL FAILURES - The argument fails to function as an argument
+  structural:
+    no_evidence:
+      description: "Makes factual claims without any supporting evidence"
+      severity: -15
+      generation_hint: "State contested factual claims as self-evident truths without citing any data, studies, or sources"
+
+    contradictory_claims:
+      description: "Makes statements that directly contradict each other"
+      severity: -15
+      generation_hint: "Include two claims in the argument that cannot both be true, creating internal inconsistency"
+
+    unsupported_conclusion:
+      description: "Reaches a conclusion not supported by the presented evidence"
+      severity: -12
+      generation_hint: "Present some evidence but then draw a conclusion that goes far beyond what the evidence actually supports"
+
+    poor_cohesion:
+      description: "Ideas are disjointed with no logical flow between points"
+      severity: -10
+      generation_hint: "Jump randomly between unrelated points, fail to connect ideas, and present a scattered mess rather than a coherent argument"
